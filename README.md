@@ -1,6 +1,6 @@
 # Go Crafting API & Calculator Backend
 
-[![Go Version](https://img.shields.io/badge/Go-1.18+-blue.svg)](https://golang.org/dl/)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/dubbie/crafting-api.svg)](https://golang.org/dl/)
 
 <!-- Add other badges later: build status, code coverage, license -->
 
@@ -74,7 +74,7 @@ crafting_api/
 
 ## Prerequisites
 
-- Go 1.24+
+- Go 1.18+
 - MySQL Server (running)
 - `migrate` CLI tool ([Installation Guide](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate))
 
