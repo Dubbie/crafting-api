@@ -20,7 +20,7 @@ type mysqlItemStore struct {
 	db *sqlx.DB
 }
 
-func newMySQLItemStore(db *sqlx.DB) *mysqlItemStore {
+func NewMySQLItemStore(db *sqlx.DB) *mysqlItemStore {
 	if db == nil {
 		panic("sqlx.DB instance is required")
 	}
