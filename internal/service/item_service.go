@@ -2,29 +2,25 @@ package service
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/dubbie/calculator-api/internal/app/pagination"
 	"github.com/dubbie/calculator-api/internal/domain"
 )
 
 // CreateItemRequest defines the payload for creating a new item.
-// We don't include ID, Slug, CreatedAt, UpdatedAt as they are generated/set by the system.
 type CreateItemRequest struct {
-	Name          string         `json:"name" validate:"required,min=2,max=255"` // Example validation tags
-	IsRawMaterial bool           `json:"is_raw_material"`                        // Use value type for boolean
-	Description   sql.NullString `json:"description"`                            // Use NullString for nullable fields
-	ImageURL      sql.NullString `json:"image_url" validate:"omitempty,url"`     // Example validation
+	Name          string                `json:"name" validate:"required,min=2,max=255"` // Required, length constraints
+	IsRawMaterial bool                  `json:"is_raw_material"`                        // No specific tag needed unless required=true
+	Description   domain.JSONNullString `json:"description"`                            // Validation on NullString needs custom validator or check Valid flag
+	ImageURL      domain.JSONNullString `json:"image_url" validate:"omitempty,url"`     // Optional, URL if present
 }
 
 // UpdateItemRequest defines the payload for updating an existing item.
-// Use pointers for fields that are optional to update.
-// This allows distinguishing between providing an empty value ("") vs. not providing the field at all.
 type UpdateItemRequest struct {
-	Name          *string        `json:"name" validate:"omitempty,min=2,max=255"` // Pointer, omitempty if not provided
-	IsRawMaterial *bool          `json:"is_raw_material"`                         // Pointer
-	Description   sql.NullString `json:"description"`                             // NullString handles nullability
-	ImageURL      sql.NullString `json:"image_url" validate:"omitempty,url"`      // NullString handles nullability
+	Name          *string               `json:"name" validate:"omitempty,min=2,max=255"` // Optional, but length constraints if present
+	IsRawMaterial *bool                 `json:"is_raw_material"`                         // Optional
+	Description   domain.JSONNullString `json:"description"`                             // Handled by NullString
+	ImageURL      domain.JSONNullString `json:"image_url" validate:"omitempty,url"`      // Optional, URL if present
 }
 
 // ItemService defines the interface for item-related business logic.

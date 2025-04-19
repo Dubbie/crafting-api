@@ -38,11 +38,13 @@ func (s *mysqlItemStore) CreateItem(ctx context.Context, item *domain.Item) erro
 
 	query := `
 		INSERT INTO items (name, slug, is_raw_material, description, image_url, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		VALUES (:name, :slug, :is_raw_material, :description, :image_url, :created_at, :updated_at);
 	`
 
 	res, err := s.db.NamedExecContext(ctx, query, item)
 	if err != nil {
+		// Debug the item
+		fmt.Printf("Item: %+v\n", item)
 		// Check for duplicate entry error (MySQL specific error number 1062)
 		var mysqlErr *mysql.MySQLError
 		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
@@ -90,7 +92,6 @@ func (s *mysqlItemStore) UpdateItem(ctx context.Context, item *domain.Item) erro
             is_raw_material = :is_raw_material,
             description = :description,
             image_url = :image_url,
-            -- created_at = :created_at, -- Usually don't update created_at
             updated_at = :updated_at
         WHERE id = :id
     `

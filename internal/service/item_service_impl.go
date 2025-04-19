@@ -47,9 +47,10 @@ func generateSlug(name string) string {
 }
 
 // --- CreateItem ---
-func (s *itemServiceImpl) CreateItem(ctx context.Context, req CreateItemRequest) (*domain.Item, error) {
-	// TODO: Add validation for the request struct `req` using a library like go-playground/validator
-
+func (s *itemServiceImpl) CreateItem(
+	ctx context.Context,
+	req CreateItemRequest,
+) (*domain.Item, error) {
 	slug := generateSlug(req.Name)
 
 	// Map request to domain model
@@ -66,7 +67,6 @@ func (s *itemServiceImpl) CreateItem(ctx context.Context, req CreateItemRequest)
 		if errors.Is(err, storage.ErrDuplicateEntry) {
 			return nil, fmt.Errorf("failed to create item: %w", err)
 		}
-		// Wrap other potential errors
 		return nil, fmt.Errorf("failed to store new item: %w", err)
 	}
 
@@ -91,7 +91,11 @@ func (s *itemServiceImpl) CreateItem(ctx context.Context, req CreateItemRequest)
 }
 
 // --- UpdateItem ---
-func (s *itemServiceImpl) UpdateItem(ctx context.Context, id uint64, req UpdateItemRequest) (*domain.Item, error) {
+func (s *itemServiceImpl) UpdateItem(
+	ctx context.Context,
+	id uint64,
+	req UpdateItemRequest,
+) (*domain.Item, error) {
 	// TODO: Add validation for the request struct `req`
 
 	// 1. Get the existing item
@@ -168,7 +172,10 @@ func (s *itemServiceImpl) DeleteItem(ctx context.Context, id uint64) error {
 }
 
 // GetItemByID retrieves an item using the storage layer.
-func (s *itemServiceImpl) GetItemByID(ctx context.Context, id uint64) (*domain.Item, error) {
+func (s *itemServiceImpl) GetItemByID(
+	ctx context.Context,
+	id uint64,
+) (*domain.Item, error) {
 	item, err := s.itemStore.GetItemByID(ctx, id)
 	if err != nil {
 		// Map storage errors to service-level errors if needed, or just wrap
@@ -184,7 +191,10 @@ func (s *itemServiceImpl) GetItemByID(ctx context.Context, id uint64) (*domain.I
 
 // ListItems retrieves a paginated list of items using the storage layer
 // and constructs the PaginatedResponse.
-func (s *itemServiceImpl) ListItems(ctx context.Context, params pagination.ListParams[domain.ItemFilters]) (pagination.PaginatedResponse[domain.Item], error) {
+func (s *itemServiceImpl) ListItems(
+	ctx context.Context,
+	params pagination.ListParams[domain.ItemFilters],
+) (pagination.PaginatedResponse[domain.Item], error) {
 	// Add any service-level validation or default setting for params if needed
 	// e.g., sanitize sort parameters, enforce max per_page again
 

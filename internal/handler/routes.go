@@ -34,7 +34,7 @@ func SetupRoutes(
 		// --- Item Routes ---
 		itemHandler := NewItemHandler(itemService)
 		// Create the specific list handler for items using the generic factory
-		itemListHandler := service.MakeListHandler(itemListService)
+		itemListHandler := MakeListHandler(itemListService)
 		r.Route("/items", func(r chi.Router) {
 			itemHandler.RegisterItemRoutes(r, itemListHandler)
 		})

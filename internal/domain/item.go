@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"database/sql"
 	"time"
 )
 
@@ -11,8 +10,8 @@ type Item struct {
 	Name          string         `db:"name" json:"name"`
 	Slug          string         `db:"slug" json:"slug"`
 	IsRawMaterial bool           `db:"is_raw_material" json:"is_raw_material"`
-	Description   sql.NullString `db:"description" json:"description,omitempty"`
-	ImageURL      sql.NullString `db:"image_url" json:"image_url,omitempty"`
+	Description   JSONNullString `db:"description" json:"description"`
+	ImageURL      JSONNullString `db:"image_url" json:"image_url"`
 	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
 }
