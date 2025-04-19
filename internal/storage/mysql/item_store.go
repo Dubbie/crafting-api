@@ -6,14 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/dubbie/calculator-api/internal/app/pagination"
 	"github.com/dubbie/calculator-api/internal/domain"
 	"github.com/dubbie/calculator-api/internal/storage"
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
+// Ensure mysqlItemStore implements ItemStore interface
 var _ storage.ItemStore = (*mysqlItemStore)(nil)
 
 type mysqlItemStore struct {
@@ -25,6 +28,38 @@ func NewMySQLItemStore(db *sqlx.DB) *mysqlItemStore {
 		panic("sqlx.DB instance is required")
 	}
 	return &mysqlItemStore{db: db}
+}
+
+// CreateItem creates a new item in the database.
+func (s *mysqlItemStore) CreateItem(ctx context.Context, item *domain.Item) error {
+	now := time.Now()
+	item.CreatedAt = now
+	item.UpdatedAt = now
+
+	query := `
+		INSERT INTO items (name, slug, is_raw_material, description, image_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+
+	res, err := s.db.NamedExecContext(ctx, query, item)
+	if err != nil {
+		// Check for duplicate entry error (MySQL specific error number 1062)
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return fmt.Errorf("item creation failed: %w: %s", storage.ErrDuplicateEntry, err.Error())
+		}
+		return fmt.Errorf("error creating item: %w", err)
+	}
+
+	// Get the ID of the newly created item
+	id, err := res.LastInsertId()
+	if err != nil {
+		// This is less likely but possible
+		return fmt.Errorf("error getting last insert ID after creating item: %w", err)
+	}
+	item.ID = uint64(id) // Update the item struct with the new ID
+
+	return nil
 }
 
 // GetItemByID retrieves a single item by its ID.
@@ -41,6 +76,67 @@ func (s *mysqlItemStore) GetItemByID(ctx context.Context, id uint64) (*domain.It
 		return nil, fmt.Errorf("error fetching item with id %d: %w", id, err)
 	}
 	return &item, nil
+}
+
+// --- UpdateItem ---
+func (s *mysqlItemStore) UpdateItem(ctx context.Context, item *domain.Item) error {
+	// Update the UpdatedAt timestamp before saving
+	item.UpdatedAt = time.Now()
+
+	query := `
+        UPDATE items SET
+            name = :name,
+            slug = :slug,
+            is_raw_material = :is_raw_material,
+            description = :description,
+            image_url = :image_url,
+            -- created_at = :created_at, -- Usually don't update created_at
+            updated_at = :updated_at
+        WHERE id = :id
+    `
+	res, err := s.db.NamedExecContext(ctx, query, item)
+	if err != nil {
+		// Check for duplicate entry error on update (e.g., changing name/slug to one that exists)
+		var mysqlErr *mysql.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			return fmt.Errorf("item update failed: %w: %s", storage.ErrDuplicateEntry, err.Error())
+		}
+		return fmt.Errorf("error updating item with id %d: %w", item.ID, err)
+	}
+
+	// Check if any row was actually updated
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		// Error getting rows affected, but the query might have succeeded
+		return fmt.Errorf("error checking rows affected after updating item %d: %w", item.ID, err)
+	}
+	if rowsAffected == 0 {
+		// No rows updated, likely means the item ID didn't exist
+		return storage.ErrNotFound
+	}
+
+	return nil
+}
+
+// --- DeleteItem ---
+func (s *mysqlItemStore) DeleteItem(ctx context.Context, id uint64) error {
+	query := "DELETE FROM items WHERE id = ?"
+	res, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
+		// Foreign key constraint errors might occur here if not handled by ON DELETE CASCADE/SET NULL etc.
+		return fmt.Errorf("error deleting item with id %d: %w", id, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error checking rows affected after deleting item %d: %w", id, err)
+	}
+	if rowsAffected == 0 {
+		// No rows deleted, likely means the item ID didn't exist
+		return storage.ErrNotFound
+	}
+
+	return nil
 }
 
 // ListItems retrieves a paginated and filtered list of items.
