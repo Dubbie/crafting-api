@@ -1,0 +1,24 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: calculator-mysql
+    restart: always
+    environment:
+      # Set environment variables required by the MySQL image
+      # These are used to initialize the database on first run
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-crafting_db}
+      MYSQL_USER: ${DB_USER:-your_db_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-crafting_db_password}
+    ports:
+      # Map a port on your host machine to the container's port
+      # Format: "HOST_PORT:CONTAINER_PORT"
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      # Mount a Docker named volume to persist database data
+      - calculator-mysqldata:/var/lib/mysql
+
+volumes:
+  # Declare the named volume used by the 'db' service
+  calculator-mysqldata:
+    driver: local
