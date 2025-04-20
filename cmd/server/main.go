@@ -39,14 +39,17 @@ func main() {
 
 	// 3. Initialize Storage Layer
 	itemStore := mysql.NewMySQLItemStore(db)
+	craftingMethodStore := mysql.NewMySQLCraftingMethodStore(db)
 
 	// 4. Initialze Service Layer
 	itemService := service.NewItemService(itemStore)
-	// Cast itemService to the generic ListService interface for items
+	craftingMethodService := service.NewCraftingMethodService(craftingMethodStore)
+	// Cast custom list services to the generic ListService interface for items
 	itemListService := itemService.(service.ListService[domain.Item, domain.ItemFilters])
+	craftingMethodListService := craftingMethodService.(service.ListService[domain.CraftingMethod, domain.CraftingMethodFilters])
 
 	// 5. Setup Router & Handlers
-	router := handler.SetupRoutes(cfg, itemService, itemListService)
+	router := handler.SetupRoutes(cfg, itemService, itemListService, craftingMethodService, craftingMethodListService)
 	fmt.Println("Router setup complete.")
 
 	// 6. Create and Configure HTTP Server

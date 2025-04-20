@@ -15,8 +15,12 @@ import (
 
 func SetupRoutes(
 	cfg config.Config,
+	// Item related
 	itemService service.ItemService,
 	itemListService service.ListService[domain.Item, domain.ItemFilters],
+	// Crafting Method related
+	craftingMethodService service.CraftingMethodService,
+	craftingMethodListService service.ListService[domain.CraftingMethod, domain.CraftingMethodFilters],
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -46,10 +50,16 @@ func SetupRoutes(
 	r.Route("/api/v1", func(r chi.Router) {
 		// --- Item Routes ---
 		itemHandler := NewItemHandler(itemService)
-		// Create the specific list handler for items using the generic factory
 		itemListHandler := MakeListHandler(itemListService)
 		r.Route("/items", func(r chi.Router) {
 			itemHandler.RegisterItemRoutes(r, itemListHandler)
+		})
+
+		// --- Crafting Method Routes ---
+		craftingMethodHandler := NewCraftingMethodHandler(craftingMethodService)
+		craftingMethodListHandler := MakeListHandler(craftingMethodListService)
+		r.Route("/crafting-methods", func(r chi.Router) {
+			craftingMethodHandler.RegisterCraftingMethodRoutes(r, craftingMethodListHandler)
 		})
 	})
 

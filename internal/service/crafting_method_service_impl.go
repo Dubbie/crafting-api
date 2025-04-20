@@ -19,7 +19,7 @@ type craftingMethodServiceImpl struct {
 	craftingMethodStore storage.CraftingMethodStore
 }
 
-func NewCraftingMethodService(craftingMethodStore storage.CraftingMethodStore) *craftingMethodServiceImpl {
+func NewCraftingMethodService(craftingMethodStore storage.CraftingMethodStore) CraftingMethodService {
 	return &craftingMethodServiceImpl{
 		craftingMethodStore: craftingMethodStore,
 	}
