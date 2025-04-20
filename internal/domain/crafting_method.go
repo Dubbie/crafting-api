@@ -4,7 +4,7 @@ import "time"
 
 // CraftingMethod represents a crafting method.
 type CraftingMethod struct {
-	ID          int            `db:"id" json:"id"`
+	ID          uint64         `db:"id" json:"id"`
 	Name        string         `db:"name" json:"name"`
 	Slug        string         `db:"slug" json:"slug"`
 	Description JSONNullString `db:"description" json:"description"`
