@@ -15,17 +15,20 @@ const (
 	MaxPerPage     = 100
 )
 
-// BaseListParams contains common pagination and sorting parameters.
 type BaseListParams struct {
 	Page    int    `schema:"page"`
 	PerPage int    `schema:"per_page"`
-	Sort    string `schema:"sort"` // e.g., "name_asc", "created_at_desc"
+	Sort    string `schema:"sort"`
 }
 
 // ListParams embeds BaseListParams and adds specific filters.
 type ListParams[F any] struct {
-	BaseListParams   // Embed directly
-	Filters        F `schema:",inline"` // Embed filters directly
+	Page    int
+	PerPage int
+	Sort    string
+
+	// Filters inside
+	Filters F
 }
 
 // PaginatedResponse defines the standard structure for paginated list responses.
@@ -84,36 +87,51 @@ func NewPaginatedResponse[T any](data []T, total int64, page, perPage int) Pagin
 // decoder is used to parse query parameters into structs.
 var decoder = schema.NewDecoder()
 
+func init() {
+	decoder.IgnoreUnknownKeys(true)
+}
+
 // ParseListParams extracts base params and specific filters using generics.
 // It now handles defaults and validation directly.
 func ParseListParams[F any](queryParams url.Values) (ListParams[F], error) {
-	// Initialize with defaults BEFORE decoding
-	params := ListParams[F]{
-		BaseListParams: BaseListParams{
-			Page:    DefaultPage,
-			PerPage: DefaultPerPage,
-			Sort:    "", // Default sort is handled by service/storage layer
-		},
-		// Filters field F will have its zero value here
-	}
+	var baseParams BaseListParams // Temporary struct for base params
+	var filters F                 // Use the generic type F directly for filters
 
-	// Single decode call populates everything based on schema tags:
-	// BaseListParams fields (Page, PerPage, Sort) AND Filters fields (due to inline tag)
-	err := decoder.Decode(&params, queryParams)
+	// --- Decode Base Params ---
+	// Set defaults BEFORE decoding this part
+	baseParams.Page = DefaultPage
+	baseParams.PerPage = DefaultPerPage
+	baseParams.Sort = ""
+
+	// Decode query into baseParams. decoder will ignore 'name', 'is_raw_material', etc.
+	err := decoder.Decode(&baseParams, queryParams)
 	if err != nil {
-		return params, fmt.Errorf("error decoding query parameters: %w", err)
+		return ListParams[F]{}, fmt.Errorf("error decoding base parameters: %w", err)
 	}
 
-	// Apply validation/clamping AFTER decoding query param values
-	if params.Page <= 0 {
-		params.Page = DefaultPage
+	// --- Decode Filter Params ---
+	err = decoder.Decode(&filters, queryParams)
+	if err != nil {
+		return ListParams[F]{}, fmt.Errorf("error decoding filter parameters: %w", err)
 	}
-	if params.PerPage <= 0 {
-		params.PerPage = DefaultPerPage
-	} else if params.PerPage > MaxPerPage {
-		params.PerPage = MaxPerPage
-	}
-	// Optional: Add validation for allowed sort values here if desired
 
-	return params, nil
+	// --- Apply validation/clamping to decoded base params ---
+	if baseParams.Page <= 0 {
+		baseParams.Page = DefaultPage
+	}
+	if baseParams.PerPage <= 0 {
+		baseParams.PerPage = DefaultPerPage
+	} else if baseParams.PerPage > MaxPerPage {
+		baseParams.PerPage = MaxPerPage
+	}
+
+	// --- Combine results manually ---
+	finalParams := ListParams[F]{
+		Page:    baseParams.Page,
+		PerPage: baseParams.PerPage,
+		Sort:    baseParams.Sort,
+		Filters: filters,
+	}
+
+	return finalParams, nil
 }
