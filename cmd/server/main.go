@@ -46,7 +46,7 @@ func main() {
 	itemListService := itemService.(service.ListService[domain.Item, domain.ItemFilters])
 
 	// 5. Setup Router & Handlers
-	router := handler.SetupRoutes(itemService, itemListService)
+	router := handler.SetupRoutes(cfg, itemService, itemListService)
 	fmt.Println("Router setup complete.")
 
 	// 6. Create and Configure HTTP Server
