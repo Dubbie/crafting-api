@@ -72,8 +72,8 @@ func (s *mysqlCraftingMethodStore) GetCraftingMethodByID(
 	query := `
         SELECT id, name, slug, description, created_at, updated_at
         FROM crafting_methods
-        WHERE id = :id;
-	`
+        WHERE id = ?
+    `
 	var craftingMethod domain.CraftingMethod
 
 	err := s.db.GetContext(ctx, &craftingMethod, query, id)
@@ -94,14 +94,12 @@ func (s *mysqlCraftingMethodStore) UpdateCraftingMethod(
 ) error {
 	craftingMethod.UpdatedAt = time.Now()
 
-	query := `
-        UPDATE crafting_methods SET
-        	name = :name,
-         	slug = :slug,
-        	description = :description,
-        	updated_at = :updated_at
-        WHERE id = :id;
-	`
+	query := `UPDATE crafting_methods SET
+		        	name = :name,
+		        	slug = :slug,
+		        	description = :description,
+		        	updated_at = :updated_at
+		        WHERE id = :id`
 
 	res, err := s.db.NamedExecContext(ctx, query, craftingMethod)
 	if err != nil {
